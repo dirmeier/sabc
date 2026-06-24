@@ -1,0 +1,60 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "nanobind>=2.0", "cmake>=3.26"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "sabc"
+version = "0.1.0"
+description = "Simulated Annealing ABC implemented in MLX C++."
+authors = [{ name = "Simon Dirmeier", email = "simd23@protonmail.com" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = ["mlx>=0.18"]
+
+[project.optional-dependencies]
+all = []
+
+[dependency-groups]
+dev = [
+  "gitlint",
+  "numpy",
+  "pytest>=7.2.0",
+  "pytest-cov>=4.0.0",
+  "ruff",
+  "scipy",
+]
+
+[tool.scikit-build]
+cmake.version = ">=3.26"
+build-dir = "build/{wheel_tag}"
+wheel.packages = ["sabc"]
+
+[tool.pytest.ini_options]
+addopts = "-v --doctest-modules --cov=sabc --cov-report=xml"
+testpaths = ["sabc"]
+
+[tool.ruff]
+indent-width = 2
+line-length = 80
+exclude = ["*_test.py", "build/**"]
+
+[tool.ruff.lint]
+select = ["ANN", "D", "E", "F", "W", "I001"]
+extend-select = ["UP", "I", "PL", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+show_error_codes = true
+no_implicit_optional = true
