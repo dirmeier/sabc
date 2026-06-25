@@ -70,7 +70,10 @@ NB_MODULE(_core, m) {
         mx::float32,
         [](void*) {});
 
-    auto result = std::make_shared<mx::array>(y);
+    // y is a view over the Python array's DLPack buffer with a no-op deleter;
+    // eval alone does not copy, so force an owning MLX copy whose buffer is
+    // independent of the borrowed storage before stashing it in the capsule.
+    auto result = std::make_shared<mx::array>(mx::add(y, mx::array(0.0f)));
     mx::eval(*result);
 
     auto* stored = new std::shared_ptr<mx::array>(result);
