@@ -1,8 +1,10 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/string.h>
 
 #include "common.hpp"
 #include "conv.hpp"
+#include "distance.hpp"
 
 namespace nb = nanobind;
 
@@ -26,5 +28,17 @@ NB_MODULE(_core, m) {
         [](nb::callable fn, nb::object theta) -> sabc::MlxArray {
           auto cb = sabc::make_callback(fn);
           return sabc::to_py(cb(sabc::to_mx(theta)));
+        });
+
+  // Runs the simulator/stats pipeline for `theta` and returns per-statistic
+  // distances to `ss_obs` under the named metric.  Callables and arrays are
+  // converted at this edge; sabc::f_dist itself stays nanobind-free.
+  m.def("f_dist",
+        [](nb::callable sim, nb::callable stats, nb::object ss_obs,
+           nb::object theta, const std::string& dist) {
+          return sabc::to_py(sabc::f_dist(sabc::make_callback(sim),
+                                          sabc::make_callback(stats),
+                                          sabc::to_mx(ss_obs),
+                                          sabc::to_mx(theta), dist));
         });
 }
