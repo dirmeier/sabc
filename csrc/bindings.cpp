@@ -51,4 +51,40 @@ NB_MODULE(_core, m) {
         shape,
         keep_alive);
   });
+
+  // Invokes a Python callable (a simulator) with the supplied mlx.core.array
+  // and returns the array it produced.  The input is forwarded to Python as-is;
+  // the callable's result is imported back into C++ as an mx::array via DLPack,
+  // evaluated, and re-exported — proving the full C++ -> Python -> C++ round
+  // trip across the DLPack boundary.
+  m.def("apply_callback", [](nb::callable fn, nb::object theta) -> MlxArray1D {
+    nb::object produced = fn(theta);
+
+    // Import the Python mlx.core.array result into C++ via DLPack, exactly as
+    // the "double" binding builds an mx::array from its ndarray argument.
+    MlxArray1D out = nb::cast<MlxArray1D>(produced);
+    const std::size_t n = out.shape(0);
+    mx::array y(
+        out.data(),
+        {static_cast<int>(n)},
+        mx::float32,
+        [](void*) {});
+
+    auto result = std::make_shared<mx::array>(y);
+    mx::eval(*result);
+
+    auto* stored = new std::shared_ptr<mx::array>(result);
+    nb::capsule keep_alive(
+        stored,
+        [](void* ptr) noexcept {
+          delete static_cast<std::shared_ptr<mx::array>*>(ptr);
+        });
+
+    const std::size_t shape[1] = {n};
+    return MlxArray1D(
+        result->data<float>(),
+        1,
+        shape,
+        keep_alive);
+  });
 }

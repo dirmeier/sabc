@@ -15,3 +15,15 @@ def test_core_doubles_an_mlx_array():
   x = mx.array([1.0, 2.0, 3.0])
   y = _core.double(x)
   assert mx.allclose(y, mx.array([2.0, 4.0, 6.0])).item()
+
+
+def test_core_invokes_python_callback():
+  import mlx.core as mx
+
+  from sabc import _core
+
+  def simulator(theta):
+    return theta + mx.array(1.0)
+
+  out = _core.apply_callback(simulator, mx.array([10.0, 20.0]))
+  assert mx.allclose(out, mx.array([11.0, 21.0])).item()
