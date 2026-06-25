@@ -47,3 +47,41 @@ def test_joint_named_two_factors_logprob_is_sum(key):
   na = Normal(mx.zeros(1), mx.ones(1)).log_prob(x["a"])
   nb_ = Normal(mx.zeros(1), mx.ones(1)).log_prob(x["b"])
   assert mx.allclose(jd.log_prob(x), na + nb_).item()
+
+
+def test_joint_named_conditional_sample_shapes(key):
+  jd = JointDistributionNamed(
+    dict(
+      a=Normal(mx.zeros(1), mx.ones(1)),
+      b=lambda a: Normal(a, mx.ones(1)),
+    )
+  )
+  s = jd.sample(key, (4,))
+  assert set(s.keys()) == {"a", "b"}
+  assert s["a"].shape == (4, 1)
+  assert s["b"].shape == (4, 1)
+
+
+def test_joint_named_conditional_logprob_is_pa_plus_pb_given_a(key):
+  jd = JointDistributionNamed(
+    dict(
+      a=Normal(mx.zeros(1), mx.ones(1)),
+      b=lambda a: Normal(a, mx.ones(1)),
+    )
+  )
+  val = {"a": mx.zeros((3, 1)), "b": mx.zeros((3, 1))}
+  pa = Normal(mx.zeros(1), mx.ones(1)).log_prob(val["a"])
+  pb = Normal(val["a"], mx.ones(1)).log_prob(val["b"])
+  assert mx.allclose(jd.log_prob(val), pa + pb).item()
+
+
+def test_joint_named_independent_still_works(key):
+  # Regression: pure-marginal joint behaves exactly as before.
+  jd = JointDistributionNamed(
+    dict(a=Normal(mx.zeros(1), mx.ones(1)),
+         b=Normal(mx.zeros(1), mx.ones(1)))
+  )
+  x = {"a": mx.zeros((3, 1)), "b": mx.zeros((3, 1))}
+  na = Normal(mx.zeros(1), mx.ones(1)).log_prob(x["a"])
+  nb_ = Normal(mx.zeros(1), mx.ones(1)).log_prob(x["b"])
+  assert mx.allclose(jd.log_prob(x), na + nb_).item()
