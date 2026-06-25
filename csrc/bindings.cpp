@@ -1,93 +1,30 @@
-#include <memory>
-
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
 #include "common.hpp"
+#include "conv.hpp"
 
 namespace nb = nanobind;
-
-// Convenience alias for a 1-D float32 MLX ndarray (DLPack interop).
-using MlxArray1D = nb::ndarray<nb::mlx, float, nb::ndim<1>>;
 
 NB_MODULE(_core, m) {
   m.doc() = "sabc MLX C++ core";
   m.def("ping", []() { return 42; });
 
   // Accepts a Python mlx.core.array via DLPack, doubles every element, and
-  // returns a new mlx.core.array via DLPack.  Both directions go through
-  // nanobind's built-in MLX / DLPack bridge (framework id 8).
-  m.def("double", [](MlxArray1D arr) -> MlxArray1D {
-    // Build mx::array from the DLPack-imported data pointer.  Pass a no-op
-    // deleter because nanobind owns the backing storage for the lifetime of
-    // this call.
-    const std::size_t n = arr.shape(0);
-    mx::array x(
-        arr.data(),
-        {static_cast<int>(n)},
-        mx::float32,
-        [](void*) {});
-
-    // Compute and materialise the result before the input ndarray goes out of
-    // scope.
-    auto result = std::make_shared<mx::array>(mx::multiply(x, mx::array(2.0f)));
-    mx::eval(*result);
-
-    // Store the shared_ptr on the heap so the capsule deleter can reach it.
-    // The capsule keeps the mx::array — and its buffer — alive for as long as
-    // the returned ndarray is alive.  nanobind will call mlx.core.array(o) on
-    // export (framework 8), which copies the data into a proper Python array.
-    auto* stored = new std::shared_ptr<mx::array>(result);
-    nb::capsule keep_alive(
-        stored,
-        [](void* ptr) noexcept {
-          delete static_cast<std::shared_ptr<mx::array>*>(ptr);
-        });
-
-    const std::size_t shape[1] = {n};
-    return MlxArray1D(
-        result->data<float>(),
-        1,
-        shape,
-        keep_alive);
+  // returns a new mlx.core.array via DLPack.  Both directions go through the
+  // shared conv.hpp helpers (no-op-deleter import + owning copy on the way in,
+  // shared_ptr + capsule keep-alive on the way out).
+  m.def("double", [](nb::object arr) -> sabc::MlxArray {
+    mx::array x = sabc::to_mx(arr);
+    return sabc::to_py(mx::multiply(x, mx::array(2.0f)));
   });
 
   // Invokes a Python callable (a simulator) with the supplied mlx.core.array
-  // and returns the array it produced.  The input is forwarded to Python as-is;
-  // the callable's result is imported back into C++ as an mx::array via DLPack,
-  // evaluated, and re-exported — proving the full C++ -> Python -> C++ round
-  // trip across the DLPack boundary.
-  m.def("apply_callback", [](nb::callable fn, nb::object theta) -> MlxArray1D {
-    nb::object produced = fn(theta);
-
-    // Import the Python mlx.core.array result into C++ via DLPack, exactly as
-    // the "double" binding builds an mx::array from its ndarray argument.
-    MlxArray1D out = nb::cast<MlxArray1D>(produced);
-    const std::size_t n = out.shape(0);
-    mx::array y(
-        out.data(),
-        {static_cast<int>(n)},
-        mx::float32,
-        [](void*) {});
-
-    // y is a view over the Python array's DLPack buffer with a no-op deleter;
-    // eval alone does not copy, so force an owning MLX copy whose buffer is
-    // independent of the borrowed storage before stashing it in the capsule.
-    auto result = std::make_shared<mx::array>(mx::add(y, mx::array(0.0f)));
-    mx::eval(*result);
-
-    auto* stored = new std::shared_ptr<mx::array>(result);
-    nb::capsule keep_alive(
-        stored,
-        [](void* ptr) noexcept {
-          delete static_cast<std::shared_ptr<mx::array>*>(ptr);
+  // and returns the array it produced, proving the full C++ -> Python -> C++
+  // round trip across the DLPack boundary.
+  m.def("apply_callback",
+        [](nb::callable fn, nb::object theta) -> sabc::MlxArray {
+          auto cb = sabc::make_callback(fn);
+          return sabc::to_py(cb(sabc::to_mx(theta)));
         });
-
-    const std::size_t shape[1] = {n};
-    return MlxArray1D(
-        result->data<float>(),
-        1,
-        shape,
-        keep_alive);
-  });
 }
