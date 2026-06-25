@@ -2,6 +2,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/string.h>
 
+#include "cdf.hpp"
 #include "common.hpp"
 #include "conv.hpp"
 #include "distance.hpp"
@@ -41,4 +42,15 @@ NB_MODULE(_core, m) {
                                           sabc::to_mx(ss_obs),
                                           sabc::to_mx(theta), dist));
         });
+
+  // Empirical CDF tables (one interpolation table per statistic) exposed as an
+  // opaque handle; arrays cross the boundary via conv.hpp, cdf.cpp stays
+  // nanobind-free.
+  nb::class_<sabc::CdfTables>(m, "CdfTables");
+  m.def("build_cdf", [](nb::object rho) {
+    return sabc::build_cdf(sabc::to_mx(rho));
+  });
+  m.def("cdf_eval", [](const sabc::CdfTables& t, nb::object rho) {
+    return sabc::to_py(sabc::cdf_eval(t, sabc::to_mx(rho)));
+  });
 }

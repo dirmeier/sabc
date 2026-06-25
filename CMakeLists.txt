@@ -25,6 +25,7 @@ find_package(MLX CONFIG REQUIRED)
 # mx::array interop in Task 4) is not blocked by the limited ABI.
 nanobind_add_module(_core NB_STATIC
   csrc/bindings.cpp
+  csrc/cdf.cpp
   csrc/distance.cpp
 )
 target_include_directories(_core PRIVATE csrc)
