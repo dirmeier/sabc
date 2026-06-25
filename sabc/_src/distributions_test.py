@@ -2,7 +2,11 @@ import math
 
 import mlx.core as mx
 
-from sabc._src.distributions import Normal, Uniform
+from sabc._src.distributions import (
+  JointDistributionNamed,
+  Normal,
+  Uniform,
+)
 
 
 def test_normal_sample_shape_and_logprob(key):
@@ -21,3 +25,25 @@ def test_uniform_logprob_inside_and_outside(key):
   outside = d.log_prob(mx.array([[3.0]]))
   assert abs(inside.item() - math.log(0.5)) < 1e-5
   assert outside.item() == float("-inf")
+
+
+def test_joint_named_sample_and_logprob(key):
+  jd = JointDistributionNamed(
+    dict(theta=Normal(mx.zeros(2), mx.ones(2))), batch_ndims=0
+  )
+  s = jd.sample(key, (4,))
+  assert set(s.keys()) == {"theta"}
+  assert s["theta"].shape == (4, 2)
+  lp = jd.log_prob({"theta": mx.zeros((4, 2))})
+  assert lp.shape == (4,)
+
+
+def test_joint_named_two_factors_logprob_is_sum(key):
+  jd = JointDistributionNamed(
+    dict(a=Normal(mx.zeros(1), mx.ones(1)),
+         b=Normal(mx.zeros(1), mx.ones(1)))
+  )
+  x = {"a": mx.zeros((3, 1)), "b": mx.zeros((3, 1))}
+  na = Normal(mx.zeros(1), mx.ones(1)).log_prob(x["a"])
+  nb_ = Normal(mx.zeros(1), mx.ones(1)).log_prob(x["b"])
+  assert mx.allclose(jd.log_prob(x), na + nb_).item()

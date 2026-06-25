@@ -58,3 +58,37 @@ class Uniform:
     density = -mx.log(self.high - self.low)
     per_dim = mx.where(inside, density, mx.array(float("-inf")))
     return mx.sum(per_dim, axis=-1)
+
+
+class JointDistributionNamed:
+  """Factorized joint distribution over a dict of named, independent parts.
+
+  Mimics ``tfp.distributions.JointDistributionNamed`` for the factorized
+  (non-conditional) case used by SABC priors.
+
+  Args:
+    distributions: Mapping name -> distribution (each with ``sample`` and
+      ``log_prob``).
+    batch_ndims: Accepted for TFP API parity; only ``0`` is supported.
+  """
+
+  def __init__(self, distributions: dict, batch_ndims: int = 0) -> None:
+    if batch_ndims != 0:
+      raise ValueError(f"Only batch_ndims=0 supported, got {batch_ndims}.")
+    self.distributions = dict(distributions)
+
+  def sample(self, key: mx.array, sample_shape: tuple[int, ...]) -> dict:
+    """Sample each factor with an independent split key."""
+    keys = mx.random.split(key, num=len(self.distributions))
+    return {
+      name: dist.sample(keys[i], sample_shape)
+      for i, (name, dist) in enumerate(self.distributions.items())
+    }
+
+  def log_prob(self, value: dict) -> mx.array:
+    """Sum the per-factor log densities."""
+    total = None
+    for name, dist in self.distributions.items():
+      lp = dist.log_prob(value[name])
+      total = lp if total is None else total + lp
+    return total
