@@ -5,6 +5,6 @@ import pytest
 
 
 @pytest.fixture
-def key():
+def key() -> mx.array:
   """A deterministic MLX PRNG key."""
   return mx.random.key(0)
