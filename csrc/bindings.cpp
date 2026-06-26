@@ -6,6 +6,7 @@
 #include "common.hpp"
 #include "conv.hpp"
 #include "distance.hpp"
+#include "epsilon.hpp"
 #include "resample.hpp"
 
 namespace nb = nanobind;
@@ -66,5 +67,13 @@ NB_MODULE(_core, m) {
         });
   m.def("resample_ess", [](nb::object u, float delta) {
     return sabc::resample_ess(sabc::to_mx(u), delta);
+  });
+
+  // Annealing-threshold (epsilon) solvers.  epsilon_single works in doubles
+  // (no array crossing); epsilon_multi converts via conv.hpp and stays
+  // nanobind-free.
+  m.def("epsilon_single", &sabc::epsilon_single);
+  m.def("epsilon_multi", [](nb::object u, double v) {
+    return sabc::to_py(sabc::epsilon_multi(sabc::to_mx(u), v));
   });
 }
