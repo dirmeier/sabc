@@ -14,7 +14,7 @@ def main() -> None:
     return theta + mx.random.normal(theta.shape) * 0.1
 
   prior = dist.JointDistributionNamed(
-    dict(theta=dist.Normal(mx.zeros(2), mx.ones(2) * 3.0))
+    {"theta": dist.Normal(mx.zeros(2), mx.ones(2) * 3.0)}
   )
 
   post = sabc.run(
