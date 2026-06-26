@@ -8,23 +8,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
       - uses: pre-commit/action@v3.0.1
 
-  build-test:
+  tests:
     runs-on: ${{ matrix.os }}
-    # Linux MLX support is still maturing; don't fail the build on it yet.
     continue-on-error: ${{ contains(matrix.os, 'ubuntu') }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - macos-14         # Apple Silicon (Metal)
-          - ubuntu-latest    # Linux x86_64
-          - ubuntu-24.04-arm # Linux arm64
+          - macos-14
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+        python-version: [ 3.12, 3.13, 3.14 ]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --all-extras
-      - run: uv run ruff check sabc examples
-      - run: uv run pytest
+      - run: make tests
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
