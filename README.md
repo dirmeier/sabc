@@ -1,5 +1,8 @@
 # sabc
 
+[![ci](https://github.com/dirmeier/sabc/actions/workflows/ci.yaml/badge.svg)](https://github.com/dirmeier/sabc/actions/workflows/ci.yaml)
+[![version](https://img.shields.io/pypi/v/sabc.svg?colorB=black&style=flat)](https://pypi.org/project/sabc/)
+
 > Simulated Annealing ABC with multiple summary statistics, with the core
 > algorithm implemented in MLX C++ and a thin, MLX-native Python API.
 
