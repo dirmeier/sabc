@@ -7,6 +7,7 @@
 #include "conv.hpp"
 #include "distance.hpp"
 #include "epsilon.hpp"
+#include "proposals.hpp"
 #include "resample.hpp"
 
 namespace nb = nanobind;
@@ -76,4 +77,14 @@ NB_MODULE(_core, m) {
   m.def("epsilon_multi", [](nb::object u, double v) {
     return sabc::to_py(sabc::epsilon_multi(sabc::to_mx(u), v));
   });
+
+  // Differential Evolution proposal.  theta/inactive cross via to_mx; the PRNG
+  // key is uint32 via to_mx_u32; de_propose itself stays nanobind-free.
+  m.def("de_propose",
+        [](nb::object theta, nb::object inactive, double g0, double sg,
+           nb::object key) {
+          return sabc::to_py(sabc::de_propose(sabc::to_mx(theta),
+                                              sabc::to_mx(inactive), g0, sg,
+                                              sabc::to_mx_u32(key)));
+        });
 }

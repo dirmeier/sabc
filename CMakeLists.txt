@@ -28,6 +28,7 @@ nanobind_add_module(_core NB_STATIC
   csrc/cdf.cpp
   csrc/distance.cpp
   csrc/epsilon.cpp
+  csrc/proposals.cpp
   csrc/resample.cpp
 )
 target_include_directories(_core PRIVATE csrc)
