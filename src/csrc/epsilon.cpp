@@ -1,8 +1,10 @@
 #include "epsilon.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace sabc {

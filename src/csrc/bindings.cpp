@@ -3,6 +3,8 @@
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 
+#include <string>
+
 #include "cdf.hpp"
 #include "common.hpp"
 #include "conv.hpp"

@@ -1,6 +1,7 @@
 #include "sabc.hpp"
 
 #include <cmath>
+#include <string>
 
 #include "epsilon.hpp"
 #include "proposals.hpp"
