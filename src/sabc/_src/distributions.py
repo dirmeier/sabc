@@ -49,9 +49,7 @@ class Uniform:
   def sample(self, key: mx.array, sample_shape: tuple[int, ...]) -> mx.array:
     """Draw ``sample_shape + (event,)`` samples."""
     shape = (*sample_shape, self.event_size)
-    return mx.random.uniform(
-      low=self.low, high=self.high, shape=shape, key=key
-    )
+    return mx.random.uniform(low=self.low, high=self.high, shape=shape, key=key)
 
   def log_prob(self, x: mx.array) -> mx.array:
     """Log density summed over the event axis; ``-inf`` outside support."""
