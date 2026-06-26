@@ -10,7 +10,7 @@
 namespace sabc {
 
 using PriorRvs = std::function<mx::array(const mx::array&, int)>;  // (key,size)
-using PriorLogpdf = std::function<mx::array(const mx::array&)>;   // (N,P)->(N,)
+using PriorLogpdf = std::function<mx::array(const mx::array&)>;  // (N,P)->(N,)
 
 struct Result {
   mx::array population;
@@ -30,8 +30,8 @@ struct RunArgs {
   std::string algorithm;  // "single_eps" | "multi_eps"
   double v;
   double delta;
-  std::string distance;   // "abs" | "sq" | "weighted_sq"
-  double gamma0;          // <=0 means "use default 2.38/sqrt(2P)"
+  std::string distance;  // "abs" | "sq" | "weighted_sq"
+  double gamma0;         // <=0 means "use default 2.38/sqrt(2P)"
   double sigma_gamma;
   long n_simulation;
   mx::array key;

@@ -8,8 +8,8 @@
 namespace sabc {
 
 // Brent's method root finder on [a, b]; requires f(a)*f(b) <= 0.
-static double brentq(const std::function<double(double)>& f, double a,
-                     double b, double tol = 1e-12, int max_iter = 200) {
+static double brentq(const std::function<double(double)>& f, double a, double b,
+                     double tol = 1e-12, int max_iter = 200) {
   double fa = f(a);
   double fb = f(b);
   if (fa * fb > 0.0) {
