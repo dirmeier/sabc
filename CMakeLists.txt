@@ -24,15 +24,15 @@ find_package(MLX CONFIG REQUIRED)
 # Drop STABLE_ABI so nanobind cross-module type sharing (needed for
 # mx::array interop in Task 4) is not blocked by the limited ABI.
 nanobind_add_module(_core NB_STATIC
-  csrc/bindings.cpp
-  csrc/cdf.cpp
-  csrc/distance.cpp
-  csrc/epsilon.cpp
-  csrc/proposals.cpp
-  csrc/resample.cpp
-  csrc/sabc.cpp
+  src/csrc/bindings.cpp
+  src/csrc/cdf.cpp
+  src/csrc/distance.cpp
+  src/csrc/epsilon.cpp
+  src/csrc/proposals.cpp
+  src/csrc/resample.cpp
+  src/csrc/sabc.cpp
 )
-target_include_directories(_core PRIVATE csrc)
+target_include_directories(_core PRIVATE src/csrc)
 target_link_libraries(_core PRIVATE mlx)
 target_compile_features(_core PRIVATE cxx_std_23)
 

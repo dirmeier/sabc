@@ -36,11 +36,11 @@ dev = [
 [tool.scikit-build]
 cmake.version = ">=3.26"
 build-dir = "build/{wheel_tag}"
-wheel.packages = ["sabc"]
+wheel.packages = ["src/sabc"]
 
 [tool.pytest.ini_options]
 addopts = "-v --doctest-modules --cov=sabc --cov-report=xml"
-testpaths = ["sabc"]
+testpaths = ["src/sabc"]
 
 [tool.ruff]
 indent-width = 2
