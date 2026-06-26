@@ -1,6 +1,7 @@
 #include "distance.hpp"
 
 #include <stdexcept>
+#include <string>
 
 namespace sabc {
 
