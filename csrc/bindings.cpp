@@ -1,5 +1,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 
 #include "cdf.hpp"
@@ -9,6 +10,7 @@
 #include "epsilon.hpp"
 #include "proposals.hpp"
 #include "resample.hpp"
+#include "sabc.hpp"
 
 namespace nb = nanobind;
 
@@ -86,5 +88,62 @@ NB_MODULE(_core, m) {
           return sabc::to_py(sabc::de_propose(sabc::to_mx(theta),
                                               sabc::to_mx(inactive), g0, sg,
                                               sabc::to_mx_u32(key)));
+        });
+
+  // SABC core loop.  Result members are mx::array, exposed via converting
+  // getters (def_ro would return a raw mx::array and fail to cross the
+  // boundary).  Callables/arrays are converted at this edge; sabc::run stays
+  // nanobind-free.  The prior rvs callback receives a uint32 PRNG key, so it
+  // uses the uint32 export path (to_py_u32), never the float32 to_py.
+  nb::class_<sabc::Result>(m, "Result")
+      .def_prop_ro("population",
+                   [](const sabc::Result& r) {
+                     return sabc::to_py(r.population);
+                   },
+                   nb::rv_policy::move)
+      .def_prop_ro("u",
+                   [](const sabc::Result& r) { return sabc::to_py(r.u); },
+                   nb::rv_policy::move)
+      .def_prop_ro("rho",
+                   [](const sabc::Result& r) { return sabc::to_py(r.rho); },
+                   nb::rv_policy::move)
+      .def_prop_ro("epsilon_history",
+                   [](const sabc::Result& r) {
+                     nb::list out;
+                     for (const auto& e : r.epsilon_history) {
+                       out.append(sabc::to_py(e));
+                     }
+                     return out;
+                   })
+      .def_prop_ro("u_history", [](const sabc::Result& r) {
+        nb::list out;
+        for (const auto& e : r.u_history) out.append(sabc::to_py(e));
+        return out;
+      });
+
+  m.def("run",
+        [](nb::callable sim, nb::callable stats, nb::object ss_obs,
+           nb::callable rvs, nb::callable logpdf, int n_particles,
+           const std::string& algorithm, double v, double delta,
+           const std::string& distance, std::optional<double> gamma0,
+           double sigma_gamma, long n_simulation, nb::object key) {
+          sabc::RunArgs a{sabc::make_callback(sim),
+                          sabc::make_callback(stats),
+                          sabc::to_mx(ss_obs),
+                          {},
+                          sabc::make_callback(logpdf),
+                          n_particles,
+                          algorithm,
+                          v,
+                          delta,
+                          distance,
+                          gamma0.value_or(-1.0),
+                          sigma_gamma,
+                          n_simulation,
+                          sabc::to_mx_u32(key)};
+          a.rvs = [rvs](const mx::array& k, int size) {
+            return sabc::to_mx(rvs(sabc::to_py_u32(k), size));
+          };
+          return sabc::run(a);
         });
 }

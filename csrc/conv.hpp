@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <vector>
 
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -65,6 +66,26 @@ inline MlxArray to_py(const mx::array& a) {
     shape.push_back(static_cast<std::size_t>(d));
   }
   return MlxArray(result->data<float>(), shape.size(), shape.data(), keep);
+}
+
+// Export a uint32 mx::array (e.g. a PRNG key) to a Python mlx.core.array.
+// Mirrors to_py exactly but for uint32: to_py is float32-only and would
+// corrupt a key buffer.  The capsule keep-alive holds a shared_ptr to the
+// evaluated array so its buffer stays valid for the ndarray's lifetime.
+inline nb::ndarray<nb::mlx, uint32_t> to_py_u32(const mx::array& a) {
+  auto result = std::make_shared<mx::array>(a);
+  mx::eval(*result);
+  auto* stored = new std::shared_ptr<mx::array>(result);
+  nb::capsule keep(stored, [](void* p) noexcept {
+    delete static_cast<std::shared_ptr<mx::array>*>(p);
+  });
+  std::vector<std::size_t> shape;
+  shape.reserve(result->ndim());
+  for (auto d : result->shape()) {
+    shape.push_back(static_cast<std::size_t>(d));
+  }
+  return nb::ndarray<nb::mlx, uint32_t>(
+      result->data<uint32_t>(), shape.size(), shape.data(), keep);
 }
 
 // Wrap a Python callable (simulator / stats / prior) as a C++ callback.  The

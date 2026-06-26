@@ -30,6 +30,7 @@ nanobind_add_module(_core NB_STATIC
   csrc/epsilon.cpp
   csrc/proposals.cpp
   csrc/resample.cpp
+  csrc/sabc.cpp
 )
 target_include_directories(_core PRIVATE csrc)
 target_link_libraries(_core PRIVATE mlx)
