@@ -39,6 +39,10 @@ dev = [
   "cmake>=3.26",
   "ninja",
 ]
+examples = [
+  "matplotlib",
+  "numpy",
+]
 
 [tool.uv]
 # Build sabc against the env's build backend (not an isolated, ephemeral one),
