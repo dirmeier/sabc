@@ -6,6 +6,7 @@
 #include "common.hpp"
 #include "conv.hpp"
 #include "distance.hpp"
+#include "resample.hpp"
 
 namespace nb = nanobind;
 
@@ -52,5 +53,18 @@ NB_MODULE(_core, m) {
   });
   m.def("cdf_eval", [](const sabc::CdfTables& t, nb::object rho) {
     return sabc::to_py(sabc::cdf_eval(t, sabc::to_mx(rho)));
+  });
+
+  // Importance resampling: draw indices ~ Categorical(weights) derived from
+  // transformed distances.  The PRNG key is uint32, imported via to_mx_u32;
+  // integer indices are cast to float32 for the float-only to_py exporter.
+  m.def("resample_indices",
+        [](nb::object u, float delta, int size, nb::object key) {
+          mx::array idx = sabc::resample_indices(
+              sabc::to_mx(u), delta, size, sabc::to_mx_u32(key));
+          return sabc::to_py(mx::astype(idx, mx::float32));
+        });
+  m.def("resample_ess", [](nb::object u, float delta) {
+    return sabc::resample_ess(sabc::to_mx(u), delta);
   });
 }

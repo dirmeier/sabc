@@ -33,6 +33,22 @@ inline mx::array to_mx(const nb::object& obj) {
   return owned;
 }
 
+// Import a Python mlx.core.array of uint32 (e.g. a PRNG key) into an OWNING
+// mx::array.  Mirrors to_mx but for the key dtype: the float caster would throw
+// on a uint32 buffer, so the cast and the owning-copy zero are uint32-typed.
+inline mx::array to_mx_u32(const nb::object& obj) {
+  auto a = nb::cast<nb::ndarray<nb::mlx, uint32_t>>(obj);
+  mx::Shape shape;
+  shape.reserve(a.ndim());
+  for (std::size_t i = 0; i < a.ndim(); ++i) {
+    shape.push_back(static_cast<mx::ShapeElem>(a.shape(i)));
+  }
+  mx::array view(a.data(), shape, mx::uint32, [](void*) {});
+  mx::array owned = mx::add(view, mx::array(0u, mx::uint32));
+  mx::eval(owned);
+  return owned;
+}
+
 // Export an mx::array (float32) to a float32 MLX ndarray via DLPack, with a
 // capsule keep-alive holding a shared_ptr to the evaluated array so its buffer
 // stays valid for the lifetime of the returned ndarray.
