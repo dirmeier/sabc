@@ -1,0 +1,13 @@
+PROJECT_NAME           = "sabc"
+PROJECT_BRIEF          = "Simulated Annealing ABC core (MLX C++)."
+OUTPUT_DIRECTORY       = build/doxygen
+INPUT                  = src/csrc
+FILE_PATTERNS          = *.hpp
+RECURSIVE              = NO
+EXTRACT_ALL            = YES
+JAVADOC_AUTOBRIEF      = YES
+TAB_SIZE               = 2
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+QUIET                  = YES
+WARN_NO_PARAMDOC       = YES
