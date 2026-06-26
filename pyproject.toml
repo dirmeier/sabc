@@ -4,9 +4,9 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "sabc"
-version = "0.1.0"
-description = "Simulated Annealing ABC implemented in MLX C++."
-authors = [{ name = "Simon Dirmeier", email = "simd23@protonmail.com" }]
+version = "0.2.0"
+description = "Simulated Annealing ABC in MLX."
+authors = [{ name = "Simon Dirmeier", email = "simd23@pm.me" }]
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
@@ -30,16 +30,38 @@ dev = [
   "pytest>=7.2.0",
   "pytest-cov>=4.0.0",
   "ruff",
+  "pre-commit",
   "scipy",
+  # Build backend kept in the env so editable.rebuild can recompile changed
+  # C++ on import (uv's isolated build tools live in temp dirs that vanish).
+  "scikit-build-core>=0.10",
+  "nanobind>=2.0",
+  "cmake>=3.26",
+  "ninja",
 ]
+
+[tool.uv]
+# Build sabc against the env's build backend (not an isolated, ephemeral one),
+# so the editable.rebuild hook can find cmake/ninja afterwards.
+no-build-isolation-package = ["sabc"]
 
 [tool.scikit-build]
 cmake.version = ">=3.26"
 build-dir = "build/{wheel_tag}"
 wheel.packages = ["src/sabc"]
+# Recompile changed C++ automatically on import (no manual rebuild step).
+editable.rebuild = true
 
 [tool.pytest.ini_options]
-addopts = "-v --doctest-modules --cov=sabc --cov-report=xml"
+addopts = [
+    "-v",
+    "--doctest-modules",
+    "--cov=sabc",
+    "--cov-report=xml",
+    "--strict-markers",
+    "--strict-config",
+    "-ra"
+]
 testpaths = ["src/sabc"]
 
 [tool.ruff]
@@ -48,13 +70,31 @@ line-length = 80
 exclude = ["*_test.py", "build/**"]
 
 [tool.ruff.lint]
-select = ["ANN", "D", "E", "F", "W", "I001"]
-extend-select = ["UP", "I", "PL", "S"]
-ignore = ["S101"]
+extend-select = [
+    "A",    # Builtins shadowing
+    "ARG",  # Unused arguments (New)
+    "ANN",  # Type annotations
+    "B",    # Bugbear (common bugs)
+    "C4",   # List/dict/set comprehensions
+    "D",    # Docstrings
+    "I",    # Isort (import sorting)
+    "N",    # PEP8 Naming conventions
+    "PL",   # Pylint rules
+    "PTH",  # Pathlib usage (New)
+    "RET",  # Return statements (New)
+    "RUF",  # Ruff-specific checks (New)
+    "S",    # Security checks
+    "SIM",  # Code simplification
+    "TCH",  # Type-checking blocks
+    "UP",   # Pyupgrade (modern syntax)
+]
+ignore = ["S101", "ANN101"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.mypy]
+strict = true
 show_error_codes = true
+warn_unused_configs = true
 no_implicit_optional = true
