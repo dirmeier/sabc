@@ -1,0 +1,14 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  build-test:
+    runs-on: macos-14  # Apple Silicon runner for MLX/Metal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --all-extras
+      - run: uv run ruff check sabc examples
+      - run: uv run pytest
