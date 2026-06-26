@@ -21,19 +21,19 @@ repos:
     args: [--fix]
   - id: ruff-format
 
-# clang-format pinned to the version used to normalize src/csrc so the hook
+# clang-format pinned to the version used to normalize src/cpp so the hook
 # does not re-churn committed code.
 - repo: https://github.com/pre-commit/mirrors-clang-format
   rev: v22.1.5
   hooks:
   - id: clang-format
-    files: ^src/csrc/.*\.(cpp|hpp)$
+    files: ^src/cpp/.*\.(cpp|hpp)$
 
 - repo: https://github.com/cpplint/cpplint
   rev: 2.0.2
   hooks:
   - id: cpplint
-    files: ^src/csrc/.*\.(cpp|hpp)$
+    files: ^src/cpp/.*\.(cpp|hpp)$
     args:
       - "--filter=-legal/copyright,-readability/casting,-whitespace/braces,\
 -whitespace/indent,-build/include_subdir,-whitespace/line_length,\
