@@ -11,7 +11,7 @@ static mx::array interp_1d(const mx::array& xs, const mx::array& ys,
   int B = q.shape(0);
   // idx = count of knots <= q, clamped to [1, K-1]; interval [idx-1, idx].
   mx::array le = mx::less_equal(mx::reshape(xs, {1, K}),
-                               mx::reshape(q, {B, 1}));   // (B, K) bool
+                                mx::reshape(q, {B, 1}));         // (B, K) bool
   mx::array idx = mx::astype(mx::sum(le, 1, false), mx::int32);  // (B,) int
   idx = mx::clip(idx, mx::array(1), mx::array(K - 1));
   mx::array x1 = mx::take(xs, idx, 0);
@@ -56,8 +56,8 @@ CdfTables build_cdf(const mx::array& rho, float a) {
   tables.values.reserve(n_stats);
   tables.probs.reserve(n_stats);
   for (int j = 0; j < n_stats; ++j) {
-    mx::array col = mx::reshape(
-        mx::slice(rho, {0, j}, {rho.shape(0), j + 1}), {rho.shape(0)});
+    mx::array col = mx::reshape(mx::slice(rho, {0, j}, {rho.shape(0), j + 1}),
+                                {rho.shape(0)});
     mx::array values = mx::array(0.0f);
     mx::array probs = mx::array(0.0f);
     build_table_1d(col, a, values, probs);
@@ -78,8 +78,7 @@ mx::array cdf_eval(const CdfTables& tables, const mx::array& rho) {
   std::vector<mx::array> cols;
   cols.reserve(tables.n_stats);
   for (int j = 0; j < tables.n_stats; ++j) {
-    mx::array q =
-        mx::reshape(mx::slice(rho, {0, j}, {B, j + 1}), {B});
+    mx::array q = mx::reshape(mx::slice(rho, {0, j}, {B, j + 1}), {B});
     mx::array u = interp_1d(tables.values[j], tables.probs[j], q);
     cols.push_back(mx::reshape(u, {B, 1}));
   }

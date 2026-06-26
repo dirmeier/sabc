@@ -84,8 +84,8 @@ inline nb::ndarray<nb::mlx, uint32_t> to_py_u32(const mx::array& a) {
   for (auto d : result->shape()) {
     shape.push_back(static_cast<std::size_t>(d));
   }
-  return nb::ndarray<nb::mlx, uint32_t>(
-      result->data<uint32_t>(), shape.size(), shape.data(), keep);
+  return nb::ndarray<nb::mlx, uint32_t>(result->data<uint32_t>(), shape.size(),
+                                        shape.data(), keep);
 }
 
 // Wrap a Python callable (simulator / stats / prior) as a C++ callback.  The

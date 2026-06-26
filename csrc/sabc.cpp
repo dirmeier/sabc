@@ -51,10 +51,10 @@ static void update_half(mx::array& population, mx::array& u, mx::array& rho,
 
   mx::array theta_prop =
       de_propose(theta_cur, inactive, gamma0, a.sigma_gamma, k_prop);
-  mx::array lp_prop = a.logpdf(theta_prop);                 // (B,)
+  mx::array lp_prop = a.logpdf(theta_prop);  // (B,)
   mx::array rho_prop =
       f_dist(a.simulator, a.stats, a.ss_obs, theta_prop, a.distance);
-  mx::array u_prop = cdf_eval(cdf, rho_prop);               // (B, n_stats)
+  mx::array u_prop = cdf_eval(cdf, rho_prop);  // (B, n_stats)
 
   // log acceptance = lp_prop - lp_cur + sum((u_cur - u_prop) * inv_eps).
   mx::array dterm =
@@ -71,9 +71,8 @@ static void update_half(mx::array& population, mx::array& u, mx::array& rho,
   mx::array new_rho = mx::where(accept_col, rho_prop, rho_cur);
   mx::array new_lp = mx::where(accept, lp_prop, lp_cur);
 
-  population =
-      mx::slice_update(population, new_theta, {lo, 0},
-                       {hi, population.shape(1)});
+  population = mx::slice_update(population, new_theta, {lo, 0},
+                                {hi, population.shape(1)});
   u = mx::slice_update(u, new_u, {lo, 0}, {hi, u.shape(1)});
   rho = mx::slice_update(rho, new_rho, {lo, 0}, {hi, rho.shape(1)});
   logprior = mx::slice_update(logprior, new_lp, {lo}, {hi});
