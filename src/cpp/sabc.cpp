@@ -34,7 +34,8 @@ static mx::array compute_epsilon(const mx::array& u, const std::string& algo,
 
 // Update one half-batch in place (functional): rewrites the active slice
 // [lo, hi) of population/u/rho/logprior.  `inactive` is the frozen other half.
-static void update_half(mx::array& population, mx::array& u, mx::array& rho,
+// Returns the number of accepted proposals in this half-batch.
+static long update_half(mx::array& population, mx::array& u, mx::array& rho,
                         mx::array& logprior, int lo, int hi,
                         const mx::array& inactive, const RunArgs& a,
                         const CdfTables& cdf, const mx::array& inv_eps,
@@ -77,6 +78,10 @@ static void update_half(mx::array& population, mx::array& u, mx::array& rho,
   rho = mx::slice_update(rho, new_rho, mx::Shape{lo, 0},
                          mx::Shape{hi, rho.shape(1)});
   logprior = mx::slice_update(logprior, new_lp, mx::Shape{lo}, mx::Shape{hi});
+
+  mx::array n_acc = mx::sum(mx::astype(accept, mx::int32));
+  mx::eval(n_acc);
+  return static_cast<long>(n_acc.item<int>());
 }
 
 Result run(const RunArgs& a) {
@@ -129,17 +134,22 @@ Result run(const RunArgs& a) {
   long resample_every = 2L * N;
 
   for (long it = 0; it < n_updates; ++it) {
-    mx::array inv_eps = mx::divide(mx::array(1.0f), epsilon);
+    // floor epsilon so a fully-annealed population cannot make inv_eps = inf.
+    mx::array eps_safe = mx::maximum(epsilon, mx::array(1e-12f));
+    mx::array inv_eps = mx::divide(mx::array(1.0f), eps_safe);
 
     // half 1 uses half 2 as inactive, then half 2 sees the updated half 1.
     mx::array k_step = mx::random::split(key, 3);
     key = mx::take(k_step, mx::array(2), 0);
+    long n_acc_iter = 0;
     mx::array inactive2 = mx::slice(population, {mid, 0}, {N, P});
-    update_half(population, u, rho, logprior, 0, mid, inactive2, a, cdf,
-                inv_eps, gamma0, mx::take(k_step, mx::array(0), 0));
+    n_acc_iter +=
+        update_half(population, u, rho, logprior, 0, mid, inactive2, a, cdf,
+                    inv_eps, gamma0, mx::take(k_step, mx::array(0), 0));
     mx::array inactive1 = mx::slice(population, {0, 0}, {mid, P});
-    update_half(population, u, rho, logprior, mid, N, inactive1, a, cdf,
-                inv_eps, gamma0, mx::take(k_step, mx::array(1), 0));
+    n_acc_iter +=
+        update_half(population, u, rho, logprior, mid, N, inactive1, a, cdf,
+                    inv_eps, gamma0, mx::take(k_step, mx::array(1), 0));
 
     // bound the graph each iteration.
     mx::eval(population);
@@ -147,8 +157,8 @@ Result run(const RunArgs& a) {
     mx::eval(rho);
     mx::eval(logprior);
 
-    // resample on a fixed cadence (MVP proxy counter).
-    n_accept += N;
+    // resample once accumulated *accepted* proposals exceed the interval.
+    n_accept += n_acc_iter;
     if (n_accept >= static_cast<long>(n_resampling + 1) * resample_every) {
       mx::array k_r = mx::random::split(key, 2);
       key = mx::take(k_r, mx::array(1), 0);
