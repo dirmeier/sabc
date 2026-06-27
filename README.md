@@ -99,6 +99,18 @@ hook against the whole repository (useful after adding a hook or before a PR):
 uv run pre-commit run --all-files
 ```
 
+### Linux build (Docker)
+
+The CI builds the C++/MLX extension under `gcc` on Linux. Apple `clang` accepts
+some MLX overloads that `gcc` rejects, so a dev container is provided to
+reproduce and verify the Linux build locally without GitHub Actions:
+
+```bash
+docker build -t sabc-linux -f .devcontainer/Dockerfile .
+docker run --rm -v "$PWD":/work -w /work sabc-linux \
+  bash -lc "uv sync --all-extras && make tests"
+```
+
 ## Citing SABC
 
 If you find this package relevant to your research, please consider citing:
