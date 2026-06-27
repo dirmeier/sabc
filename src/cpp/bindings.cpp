@@ -38,15 +38,20 @@ NB_MODULE(_core, m) {
           return sabc::to_py(cb(sabc::to_mx(theta)));
         });
 
-  // Runs the simulator/stats pipeline for `theta` and returns per-statistic
-  // distances to `ss_obs` under the named metric.  Callables and arrays are
-  // converted at this edge; sabc::f_dist itself stays nanobind-free.
-  m.def("f_dist", [](nb::callable sim, nb::callable stats, nb::object ss_obs,
-                     nb::object theta, const std::string& dist) {
-    return sabc::to_py(
-        sabc::f_dist(sabc::make_callback(sim), sabc::make_callback(stats),
-                     sabc::to_mx(ss_obs), sabc::to_mx(theta), dist));
-  });
+  // Runs the simulator/stats pipeline for `theta` and returns distances to
+  // `ss_obs` under the named metric (per-statistic, or summed into one column
+  // when `scalar`).  Callables and arrays are converted at this edge;
+  // sabc::f_dist itself stays nanobind-free.
+  m.def(
+      "f_dist",
+      [](nb::callable sim, nb::callable stats, nb::object ss_obs,
+         nb::object theta, const std::string& dist, bool scalar) {
+        return sabc::to_py(sabc::f_dist(
+            sabc::make_callback(sim), sabc::make_callback(stats),
+            sabc::to_mx(ss_obs), sabc::to_mx(theta), dist, scalar));
+      },
+      nb::arg("sim"), nb::arg("stats"), nb::arg("ss_obs"), nb::arg("theta"),
+      nb::arg("dist"), nb::arg("scalar") = false);
 
   // Empirical CDF tables (one interpolation table per statistic) exposed as an
   // opaque handle; arrays cross the boundary via conv.hpp, cdf.cpp stays
@@ -118,21 +123,54 @@ NB_MODULE(_core, m) {
         return out;
       });
 
-  m.def("run", [](nb::callable sim, nb::callable stats, nb::object ss_obs,
-                  nb::callable rvs, nb::callable logpdf, int n_particles,
-                  const std::string& algorithm, double v, double delta,
-                  const std::string& distance, std::optional<double> gamma0,
-                  double sigma_gamma, long n_simulation, nb::object key) {
-    sabc::RunArgs a{sabc::make_callback(sim),
-                    sabc::make_callback(stats),
-                    sabc::to_mx(ss_obs),
+  // Functional entry: the user supplies a single distance callback
+  // f_dist(theta) -> rho ((B,n_stats) or (B,1)) that folds simulate + summary +
+  // distance.  Wrapped as the core's distance_fn via make_callback.
+  m.def("run_fdist",
+        [](nb::callable f_dist, nb::callable rvs, nb::callable logpdf,
+           int n_particles, const std::string& algorithm, double v,
+           double delta, std::optional<double> gamma0, double sigma_gamma,
+           long n_simulation, nb::object key) {
+          sabc::RunArgs a{sabc::make_callback(f_dist),
+                          {},
+                          sabc::make_callback(logpdf),
+                          n_particles,
+                          algorithm,
+                          v,
+                          delta,
+                          gamma0.value_or(-1.0),
+                          sigma_gamma,
+                          n_simulation,
+                          sabc::to_mx_u32(key)};
+          a.rvs = [rvs](const mx::array& k, int size) {
+            return sabc::to_mx(rvs(sabc::to_py_u32(k), size));
+          };
+          return sabc::run(a);
+        });
+
+  // String entry: the C++ core computes the distance from a simulator + stats
+  // pipeline and a named metric (per-statistic, or summed when `scalar`).  Kept
+  // for benchmarking the in-C++ distance against the functional callback path.
+  m.def("run_str", [](nb::callable sim, nb::callable stats, nb::object ss_obs,
+                      nb::callable rvs, nb::callable logpdf, int n_particles,
+                      const std::string& algorithm, double v, double delta,
+                      const std::string& distance, bool scalar,
+                      std::optional<double> gamma0, double sigma_gamma,
+                      long n_simulation, nb::object key) {
+    sabc::Callback sim_cb = sabc::make_callback(sim);
+    sabc::Callback stats_cb = sabc::make_callback(stats);
+    mx::array ss = sabc::to_mx(ss_obs);
+    sabc::Callback distance_fn = [sim_cb, stats_cb, ss, distance,
+                                  scalar](const mx::array& theta) {
+      return sabc::f_dist(sim_cb, stats_cb, ss, theta, distance, scalar);
+    };
+    sabc::RunArgs a{distance_fn,
                     {},
                     sabc::make_callback(logpdf),
                     n_particles,
                     algorithm,
                     v,
                     delta,
-                    distance,
                     gamma0.value_or(-1.0),
                     sigma_gamma,
                     n_simulation,

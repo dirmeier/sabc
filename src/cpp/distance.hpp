@@ -20,12 +20,14 @@ using Callback = std::function<mx::array(const mx::array&)>;
  * @param ss_obs Observed summary statistics, shape (n_stats,).
  * @param theta Parameter batch, shape (B, n_para).
  * @param distance One of "abs", "sq", "weighted_sq".
+ * @param scalar If true, sum the per-statistic distances into a single column
+ *   (shape (B, 1)); otherwise keep them per-statistic (shape (B, n_stats)).
  * @param weights Per-statistic weights for "weighted_sq" (else nullptr).
- * @return Per-statistic distances, shape (B, n_stats).
+ * @return Distances, shape (B, n_stats), or (B, 1) when @p scalar is true.
  */
 mx::array f_dist(const Callback& simulator, const Callback& stats,
                  const mx::array& ss_obs, const mx::array& theta,
-                 const std::string& distance,
+                 const std::string& distance, bool scalar = false,
                  const mx::array* weights = nullptr);
 
 }  // namespace sabc
