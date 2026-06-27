@@ -18,7 +18,10 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
-dependencies = ["mlx>=0.18"]
+dependencies = [
+  "mlx>=0.18",
+  "mlx[cpu]>=0.18; sys_platform == 'linux'",
+]
 
 [project.optional-dependencies]
 all = []
@@ -32,8 +35,6 @@ dev = [
   "ruff",
   "pre-commit",
   "scipy",
-  # Build backend kept in the env so editable.rebuild can recompile changed
-  # C++ on import (uv's isolated build tools live in temp dirs that vanish).
   "scikit-build-core>=0.10",
   "nanobind>=2.0",
   "cmake>=3.26",
@@ -43,6 +44,9 @@ examples = [
   "matplotlib",
   "numpy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/dirmeier/sabc"
 
 [tool.uv]
 # Build sabc against the env's build backend (not an isolated, ephemeral one),
