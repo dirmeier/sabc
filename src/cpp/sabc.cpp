@@ -53,8 +53,7 @@ static void update_half(mx::array& population, mx::array& u, mx::array& rho,
   mx::array theta_prop =
       de_propose(theta_cur, inactive, gamma0, a.sigma_gamma, k_prop);
   mx::array lp_prop = a.logpdf(theta_prop);  // (B,)
-  mx::array rho_prop =
-      f_dist(a.simulator, a.stats, a.ss_obs, theta_prop, a.distance);
+  mx::array rho_prop = a.distance_fn(theta_prop);
   mx::array u_prop = cdf_eval(cdf, rho_prop);  // (B, n_stats)
 
   // log acceptance = lp_prop - lp_cur + sum((u_cur - u_prop) * inv_eps).
@@ -91,8 +90,7 @@ Result run(const RunArgs& a) {
 
   mx::array population = a.rvs(k0, N);  // (N, P)
   int P = population.shape(1);
-  mx::array rho =
-      f_dist(a.simulator, a.stats, a.ss_obs, population, a.distance);
+  mx::array rho = a.distance_fn(population);
   mx::array logprior = a.logpdf(population);
 
   CdfTables cdf = build_cdf(rho);

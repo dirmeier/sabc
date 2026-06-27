@@ -25,16 +25,14 @@ struct Result {
 
 /// @brief Configuration for a single SABC run.
 struct RunArgs {
-  Callback simulator;     ///< Maps a parameter batch to simulated data.
-  Callback stats;         ///< Maps simulated data to summary statistics.
-  mx::array ss_obs;       ///< Observed summary statistics, shape (n_stats,).
+  Callback distance_fn;   ///< Maps a parameter batch (B,n_para) to distances
+                          ///< (B,n_stats); folds simulate+summary+distance.
   PriorRvs rvs;           ///< Prior sampler, (key, size)->(N, P).
   PriorLogpdf logpdf;     ///< Prior log-density, (N, P)->(N,).
   int n_particles;        ///< Population size N.
   std::string algorithm;  ///< "single_eps" | "multi_eps".
   double v;               ///< Annealing speed coefficient.
   double delta;           ///< Resampling annealing temperature.
-  std::string distance;   ///< "abs" | "sq" | "weighted_sq".
   double gamma0;          ///< Base step; <=0 means default 2.38/sqrt(2P).
   double sigma_gamma;     ///< Relative Gaussian jitter on the step size.
   long n_simulation;      ///< Total simulation budget.

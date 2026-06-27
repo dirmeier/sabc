@@ -23,3 +23,11 @@ def test_fdist_sq_matches_manual():
     lambda t: t, lambda y: y, ss_obs, mx.array([[3.0]]), "sq"
   )
   assert mx.allclose(rho, mx.array([[9.0]])).item()
+
+
+def test_fdist_scalar_sums_per_stat_distances():
+  ss_obs = mx.array([1.0, 2.0])
+  theta = mx.array([[1.5, 2.0], [0.0, 0.0]])
+  rho = _core.f_dist(lambda t: t, lambda y: y, ss_obs, theta, "abs", True)
+  assert rho.shape == (2, 1)  # aggregated to a single column
+  assert mx.allclose(rho, mx.array([[0.5], [3.0]])).item()
