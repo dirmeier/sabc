@@ -1,4 +1,4 @@
-.PHONY: build tests lints format check docs example
+.PHONY: tests lints format check
 
 
 tests:
