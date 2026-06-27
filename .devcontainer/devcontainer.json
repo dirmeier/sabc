@@ -1,0 +1,11 @@
+{
+  "name": "sabc-linux",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/work",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/work,type=bind",
+  "postCreateCommand": "uv sync --all-extras",
+  "remoteUser": "root"
+}

@@ -16,7 +16,6 @@ jobs:
 
   tests:
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ contains(matrix.os, 'ubuntu') }}
     strategy:
       fail-fast: false
       matrix:
