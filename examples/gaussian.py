@@ -1,7 +1,6 @@
 """Infer a 2D Gaussian location with sabc-mlx."""
 
 import mlx.core as mx
-
 import sabc
 from sabc import distributions as dist
 
